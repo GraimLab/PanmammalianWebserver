@@ -3,10 +3,9 @@ name: Deploy Panmammalian Server to Github Pages
 on:
   push:
     branches: [main]
-  wokflow_dispatch:
 
 permissions:
-  content: read
+  contents: read
   pages: write
   id-token: write
 
