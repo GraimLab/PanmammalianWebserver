@@ -1,4 +1,6 @@
 import { useState } from "react";
+import Runner from "./Runner";
+import Plot from "./Plot";
 
 type Result = {
   rank: number;
@@ -15,71 +17,6 @@ export default function App() {
   const [results, setResults] = useState<Result[]>([]);
 
   function runMockAnalysis() {
-    setResults([
-      {
-        rank: 1,
-        species: "Pan troglodytes",
-        commonName: "Chimpanzee",
-        correlation: 0.982,
-        genesMatched: 1842,
-        taxonomicGroup: "Primate",
-        summary: "Closest match in the current reference set with very high overlap across the submitted genes.",
-      },
-      {
-        rank: 2,
-        species: "Gorilla gorilla",
-        commonName: "Western Gorilla",
-        correlation: 0.971,
-        genesMatched: 1798,
-        taxonomicGroup: "Primate",
-        summary: "Strong transcriptomic similarity and high shared gene coverage.",
-      },
-      {
-        rank: 3,
-        species: "Pongo abelii",
-        commonName: "Sumatran Orangutan",
-        correlation: 0.948,
-        genesMatched: 1713,
-        taxonomicGroup: "Primate",
-        summary: "High-ranking primate species with substantial overlap in matched markers.",
-      },
-      {
-        rank: 4,
-        species: "Macaca mulatta",
-        commonName: "Rhesus Macaque",
-        correlation: 0.903,
-        genesMatched: 1625,
-        taxonomicGroup: "Primate",
-        summary: "Moderately strong similarity with broad comparative genomics usage.",
-      },
-      {
-        rank: 5,
-        species: "Mus musculus",
-        commonName: "House Mouse",
-        correlation: 0.812,
-        genesMatched: 1404,
-        taxonomicGroup: "Rodent",
-        summary: "Lower than primates, but still a useful mammalian comparison model.",
-      },
-      {
-        rank: 6,
-        species: "Canis lupus familiaris",
-        commonName: "Dog",
-        correlation: 0.784,
-        genesMatched: 1322,
-        taxonomicGroup: "Carnivore",
-        summary: "Mid-range similarity with decent overlap in conserved genes.",
-      },
-      {
-        rank: 7,
-        species: "Bos taurus",
-        commonName: "Cow",
-        correlation: 0.751,
-        genesMatched: 1279,
-        taxonomicGroup: "Ungulate",
-        summary: "Useful distant mammalian reference with moderate signal retention.",
-      },
-    ]);
   }
 
   return (
@@ -93,6 +30,9 @@ export default function App() {
       }}
     >
       <div style={{ maxWidth: "1180px", margin: "0 auto" }}>
+        <Runner />
+        <Plot />
+
         <header
           style={{
             background: "#ffffff",
@@ -139,11 +79,11 @@ export default function App() {
                 value={genes}
                 onChange={(e) => setGenes(e.target.value)}
                 placeholder={`TP53
-BRCA1
-EGFR
-MYC
-APOE
-VEGFA`}
+                                BRCA1
+                                EGFR
+                                MYC
+                                APOE
+                                VEGFA`}
                 style={{
                   width: "100%",
                   height: "220px",
