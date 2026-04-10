@@ -12,7 +12,7 @@ type CorrelationListProps = {
 };
 
 export default function CorrelationList({ selected_cancer } : CorrelationListProps) {
-    const data_path = "/PanmammalianWebserver/data/correlations.tsv";
+    const data_path = "/PanmammalianWebpage/data/correlations.tsv";
     const [allData, setAllData] = useState<Array<corr_type>>([]);
 
 
