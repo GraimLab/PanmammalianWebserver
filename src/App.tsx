@@ -45,7 +45,7 @@ export default function App() {
           </h1>
           <p style={{ margin: 0, color: "#44506a", fontSize: "1rem" }}>
             Submit a gene list, compare it against reference species, and rank species
-            by Pearson correlation similarity.
+            by Spearman correlation similarity.
           </p>
         </header>
 
@@ -208,7 +208,7 @@ export default function App() {
             <div style={{ marginBottom: "14px" }}>
               <h2 style={{ marginTop: 0, marginBottom: "8px" }}>Ranked Species Results</h2>
               <p style={{ margin: 0, color: "#4d5b77" }}>
-                Species are ranked by descending Pearson correlation similarity.
+                Species are ranked by descending Spearman correlation similarity.
               </p>
             </div>
 
