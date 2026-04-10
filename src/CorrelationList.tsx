@@ -95,15 +95,18 @@ export default function CorrelationList({ selected_cancer } : CorrelationListPro
                   
                     {/* Species info */}
                     <div style={{flex: 1}}>
-                      <div style={{fontWeight: 600}}>
-                        {d.species}
-                      </div>
-                  
-                      <div style={{fontSize: "0.85rem", color: "#555"}}>
-                        Cancer type: {d.cancer_type}
+                      <div style={{ fontWeight: 600 }}>
+                        <a
+                          href={"https://en.wikipedia.org/wiki/" + d.species.replace(/\s+/g, "_")}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: "#1f4fd1", textDecoration: "none" }}
+                        >
+                          {d.species}
+                        </a>
                       </div>
                     </div>
-                  
+
                   </div>
                 )
               })

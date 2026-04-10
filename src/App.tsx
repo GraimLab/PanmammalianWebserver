@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import CorrelationList from "./CorrelationList";
+import CorrelationCalculator from "./CorrelationCalculator";
 
 type Result = {
   rank: number;
@@ -13,11 +14,7 @@ type Result = {
 };
 
 export default function App() {
-  const [genes, setGenes] = useState("");
   const [selectedCancerType, setSelectedCancerType] = useState<string>("all");
-
-  function runMockAnalysis() {
-  }
 
   return (
     <div
@@ -52,148 +49,13 @@ export default function App() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1.05fr 0.95fr",
+            gridTemplateColumns: "1.0fr 1.0fr",
             gap: "24px",
             alignItems: "start",
           }}
         >
           <div style={{ display: "grid", gap: "24px" }}>
-            <section
-              style={{
-                background: "#ffffff",
-                border: "1px solid #c7d2df",
-                borderRadius: "18px",
-                padding: "22px",
-                boxShadow: "0 8px 24px rgba(20, 30, 50, 0.07)",
-              }}
-            >
-              <h2 style={{ marginTop: 0, marginBottom: "8px" }}>Gene Input</h2>
-              <p style={{ marginTop: 0, color: "#4d5b77" }}>
-                Enter one gene per line or paste a gene list directly.
-              </p>
-
-              <textarea
-                value={genes}
-                onChange={(e) => setGenes(e.target.value)}
-                placeholder={`TP53
-                                BRCA1
-                                EGFR
-                                MYC
-                                APOE
-                                VEGFA`}
-                style={{
-                  width: "100%",
-                  height: "220px",
-                  padding: "14px",
-                  fontFamily: "monospace",
-                  fontSize: "0.95rem",
-                  background: "#f7f9fc",
-                  color: "#172033",
-                  border: "1px solid #b8c5d6",
-                  borderRadius: "12px",
-                  resize: "vertical",
-                  boxSizing: "border-box",
-                }}
-              />
-
-              <div style={{ marginTop: "14px", display: "flex", gap: "12px" }}>
-                <button
-                  onClick={runMockAnalysis}
-                  style={{
-                    background: "#1f4fd1",
-                    color: "white",
-                    border: "none",
-                    padding: "11px 18px",
-                    borderRadius: "10px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Run Analysis
-                </button>
-
-                <button
-                  onClick={() => {
-                    setGenes("");
-                  }}
-                  style={{
-                    background: "#e8eef8",
-                    color: "#17305f",
-                    border: "1px solid #c7d4ea",
-                    padding: "11px 18px",
-                    borderRadius: "10px",
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  Clear
-                </button>
-              </div>
-            </section>
-
-            <section
-              style={{
-                background: "#ffffff",
-                border: "1px solid #c7d2df",
-                borderRadius: "18px",
-                padding: "22px",
-                boxShadow: "0 8px 24px rgba(20, 30, 50, 0.07)",
-              }}
-            >
-              <h2 style={{ marginTop: 0, marginBottom: "14px" }}>Analysis Settings</h2>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                  gap: "16px",
-                }}
-              >
-                <label style={{ display: "grid", gap: "8px", fontWeight: 600 }}>
-                  <span>Reference Database</span>
-                  <select
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: "10px",
-                      border: "1px solid #b8c5d6",
-                      background: "#f7f9fc",
-                    }}
-                  >
-                    <option>All Mammals</option>
-                    <option>Primates</option>
-                    <option>Vertebrates</option>
-                  </select>
-                </label>
-
-                <label style={{ display: "grid", gap: "8px", fontWeight: 600 }}>
-                  <span>Max Results</span>
-                  <input
-                    type="number"
-                    defaultValue={25}
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: "10px",
-                      border: "1px solid #b8c5d6",
-                      background: "#f7f9fc",
-                    }}
-                  />
-                </label>
-
-                <label style={{ display: "grid", gap: "8px", fontWeight: 600 }}>
-                  <span>Minimum Overlap</span>
-                  <input
-                    type="number"
-                    defaultValue={100}
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: "10px",
-                      border: "1px solid #b8c5d6",
-                      background: "#f7f9fc",
-                    }}
-                  />
-                </label>
-              </div>
-            </section>
+           <CorrelationCalculator /> 
           </div>
 
           <section
@@ -264,9 +126,11 @@ export default function App() {
                 </select>
               </label>
             </div>
-            <CorrelationList selected_cancer={selectedCancerType}/>
-          </section>
+            <CorrelationList selected_cancer={selectedCancerType} />
+          </section> 
         </div>
+
+        
       </div>
     </div>
   );
