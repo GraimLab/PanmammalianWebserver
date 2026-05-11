@@ -1,22 +1,71 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 
 import CorrelationList from "./CorrelationList";
 import CorrelationCalculator from "./CorrelationCalculator";
 import Footer from "./Footer";
-import GraphView from "./GraphView";
 
-type Result = {
-  rank: number;
-  species: string;
-  commonName: string;
-  correlation: number;
-  genesMatched: number;
-  taxonomicGroup: string;
-  summary: string;
-};
+const GraphView = lazy(() => import("./GraphView"));
+
+const CANCER_TYPES = [
+  "all", "bladder", "breast", "central nervous system", "colon", "colorectal",
+  "endometrial", "gastric", "glioma", "head and neck", "hepatocellular",
+  "intestine", "kidney", "leukaemia", "liver", "lung", "lymphoma", "melanoma",
+  "mesothelioma", "oesophagus", "other tumour types", "ovarian", "paediatric",
+  "pancreas", "prostate", "rare other tumour types", "renal", "sarcoma", "skin",
+  "small intestine", "soft tissue sarcoma", "testicular", "thyroid", "urothelial", "uterine",
+];
 
 export default function App() {
   const [selectedCancerType, setSelectedCancerType] = useState<string>("all");
+  const [resultTSV, setResultTSV] = useState<string>("");
+  const [primateSpecies, setPrimateSpecies] = useState<Set<string>>(new Set());
+
+  const availableCancerTypes = useMemo(() => {
+    if (!resultTSV) return ["all"];
+    const types = new Set<string>();
+    resultTSV.split("\n").forEach(line => {
+      const parts = line.trim().split("\t");
+      if (parts[1] && !isNaN(Number(parts[2]))) types.add(parts[1]);
+    });
+    return CANCER_TYPES.filter(ct => types.has(ct));
+  }, [resultTSV]);
+
+  useEffect(() => {
+    if (!availableCancerTypes.includes(selectedCancerType)) {
+      setSelectedCancerType("all");
+    }
+  }, [availableCancerTypes]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const res = await fetch("/PanmammalianWebpage/data/correlations.tsv");
+      setResultTSV(await res.text());
+    };
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    async function loadTaxonomy() {
+      const res = await fetch("/PanmammalianWebpage/data/sp_genus_family_order.txt");
+      const text = await res.text();
+      const primates = new Set(
+        text.split("\n")
+          .map(line => line.trim())
+          .filter(line => line.endsWith("\tPrimates"))
+          .map(line => line.split("\t")[0])
+      );
+      setPrimateSpecies(primates);
+    }
+    loadTaxonomy();
+  }, []);
+
+  const cardStyle: React.CSSProperties = {
+    background: "#ffffff",
+    border: "1px solid #c7d2df",
+    borderRadius: "18px",
+    padding: "24px",
+    boxShadow: "0 4px 16px rgba(20, 30, 50, 0.07)",
+  };
 
   return (
     <div
@@ -24,116 +73,118 @@ export default function App() {
         fontFamily: "Arial, sans-serif",
         background: "#eef2f7",
         minHeight: "100vh",
-        padding: "32px",
+        padding: "32px 24px",
         color: "#172033",
       }}
     >
-      <div style={{ maxWidth: "1180px", margin: "0 auto" }}>
-        <header
-          style={{
-            background: "#ffffff",
-            border: "1px solid #cfd8e3",
-            borderRadius: "18px",
-            padding: "24px 28px",
-            boxShadow: "0 8px 24px rgba(20, 30, 50, 0.08)",
-            marginBottom: "24px",
-          }}
-        >
-          <h1 style={{ margin: "0 0 8px 0", fontSize: "2rem" }}>
+      <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+
+        <header style={{ ...cardStyle, marginBottom: "24px" }}>
+          <h1 style={{ margin: "0 0 6px 0", fontSize: "1.9rem", letterSpacing: "-0.5px" }}>
             Panmammalian Gene Similarity Server
           </h1>
           <p style={{ margin: 0, color: "#44506a", fontSize: "1rem" }}>
-            Submit a gene list, compare it against reference species, and rank species
-            by Spearman correlation similarity.
+            Submit a gene list, compare it against reference species, and rank species by Spearman correlation similarity.
           </p>
         </header>
 
+        {/* Left column: calculator  |  Right column: results */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1.0fr 1.0fr",
+            gridTemplateColumns: "1fr 1fr",
             gap: "24px",
-            alignItems: "start",
+            alignItems: "stretch",
           }}
         >
-          <div style={{ display: "grid", gap: "24px" }}>
-           <CorrelationCalculator /> 
-           <GraphView />
-          </div>
+          <section style={{ ...cardStyle, display: "flex", flexDirection: "column" }}>
+            <CorrelationCalculator updateResults={setResultTSV} />
+          </section>
 
-          <section
-            style={{
-              background: "#ffffff",
-              border: "1px solid #c7d2df",
-              borderRadius: "18px",
-              padding: "22px",
-              boxShadow: "0 8px 24px rgba(20, 30, 50, 0.07)",
-            }}
-          >
-            <div style={{ marginBottom: "14px" }}>
-              <h2 style={{ marginTop: 0, marginBottom: "8px" }}>Ranked Species Results</h2>
-              <p style={{ margin: 0, color: "#4d5b77" }}>
-                Species are ranked by descending Spearman correlation similarity.
-              </p>
+          <section style={cardStyle}>
+            <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <h2 style={{ marginTop: 0, marginBottom: "4px" }}>Ranked Species Results</h2>
+                <p style={{ margin: 0, color: "#4d5b77", fontSize: "0.9rem" }}>
+                  Ranked by descending Spearman correlation.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  if (!resultTSV) return;
+                  const blob = new Blob([resultTSV], { type: "text/tab-separated-values" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "panmammalian_correlations.tsv";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                disabled={!resultTSV}
+                style={{
+                  background: "#e8eef8",
+                  color: "#17305f",
+                  border: "1px solid #c7d4ea",
+                  padding: "7px 14px",
+                  borderRadius: "10px",
+                  fontWeight: 700,
+                  cursor: resultTSV ? "pointer" : "not-allowed",
+                  fontSize: "0.85rem",
+                  whiteSpace: "nowrap",
+                  opacity: resultTSV ? 1 : 0.5,
+                  flexShrink: 0,
+                  marginLeft: "12px",
+                }}
+              >
+                ↓ Download TSV
+              </button>
             </div>
 
-            <div style={{ marginBottom: "16px", maxWidth: "280px" }}>
-              <label style={{ display: "grid", gap: "8px", fontWeight: 600 }}>
-                <span>Cancer type</span>
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <span style={{ fontWeight: 600, fontSize: "0.9rem" }}>Cancer type</span>
                 <select
                   value={selectedCancerType}
-                  onChange={(e) => setSelectedCancerType(e.target.value)}
+                  onChange={e => setSelectedCancerType(e.target.value)}
                   style={{
-                    padding: "10px 12px",
-                    borderRadius: "10px",
+                    padding: "7px 10px",
+                    borderRadius: "8px",
                     border: "1px solid #b8c5d6",
                     background: "#f7f9fc",
                     color: "#172033",
+                    fontSize: "0.9rem",
                   }}
                 >
-                  <option value="all">all</option>
-                  <option value="bladder">bladder</option>
-                  <option value="breast">breast</option>
-                  <option value="central nervous system">central nervous system</option>
-                  <option value="colon">colon</option>
-                  <option value="colorectal">colorectal</option>
-                  <option value="endometrial">endometrial</option>
-                  <option value="gastric">gastric</option>
-                  <option value="glioma">glioma</option>
-                  <option value="head and neck">head and neck</option>
-                  <option value="hepatocellular">hepatocellular</option>
-                  <option value="intestine">intestine</option>
-                  <option value="kidney">kidney</option>
-                  <option value="leukaemia">leukaemia</option>
-                  <option value="liver">liver</option>
-                  <option value="lung">lung</option>
-                  <option value="lymphoma">lymphoma</option>
-                  <option value="melanoma">melanoma</option>
-                  <option value="mesothelioma">mesothelioma</option>
-                  <option value="oesophagus">oesophagus</option>
-                  <option value="other tumour types">other tumour types</option>
-                  <option value="ovarian">ovarian</option>
-                  <option value="paediatric">paediatric</option>
-                  <option value="pancreas">pancreas</option>
-                  <option value="prostate">prostate</option>
-                  <option value="rare other tumour types">rare other tumour types</option>
-                  <option value="renal">renal</option>
-                  <option value="sarcoma">sarcoma</option>
-                  <option value="skin">skin</option>
-                  <option value="small intestine">small intestine</option>
-                  <option value="soft tissue sarcoma">soft tissue sarcoma</option>
-                  <option value="testicular">testicular</option>
-                  <option value="thyroid">thyroid</option>
-                  <option value="urothelial">urothelial</option>
-                  <option value="uterine">uterine</option>
+                  {availableCancerTypes.map(ct => (
+                    <option key={ct} value={ct}>{ct}</option>
+                  ))}
                 </select>
               </label>
             </div>
-            <CorrelationList selected_cancer={selectedCancerType} />
-          </section> 
+
+            <CorrelationList
+              resultsTSV={resultTSV}
+              selected_cancer={selectedCancerType}
+              primateSpecies={primateSpecies}
+            />
+          </section>
         </div>
 
-        
+        {/* Graph view — full width below the two columns */}
+        <div style={{ marginTop: "24px" }}>
+          <Suspense fallback={
+            <div style={{ ...cardStyle, padding: "40px", textAlign: "center", color: "#4d5b77" }}>
+              Loading charts...
+            </div>
+          }>
+            <GraphView
+              resultsTSV={resultTSV}
+              selectedCancer={selectedCancerType}
+              primateSpecies={primateSpecies}
+            />
+          </Suspense>
+        </div>
+
       </div>
       <Footer />
     </div>

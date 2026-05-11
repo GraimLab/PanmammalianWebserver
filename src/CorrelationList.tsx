@@ -1,5 +1,5 @@
-import React from "react";
-import {useEffect, useState, useMemo} from "react";
+import { useEffect, useState, useMemo } from "react";
+import CorrelationListRow from "./CorrelationListRow";
 
 type corr_type = {
     species: string,
@@ -8,110 +8,59 @@ type corr_type = {
 }
 
 type CorrelationListProps = {
-  selected_cancer: string;
+    resultsTSV: string;
+    selected_cancer: string;
+    primateSpecies: Set<string>;
 };
 
-export default function CorrelationList({ selected_cancer } : CorrelationListProps) {
-    const data_path = "/PanmammalianWebpage/data/correlations.tsv";
-    const [allData, setAllData] = useState<Array<corr_type>>([]);
-
+export default function CorrelationList({ resultsTSV, selected_cancer, primateSpecies }: CorrelationListProps) {
+    const [allData, setAllData] = useState<corr_type[]>([]);
+    const [excludePrimates, setExcludePrimates] = useState(true);
 
     useEffect(() => {
-        async function loadData() {
-            const res = await fetch(data_path);
-            const results: Array<corr_type> = (await res.text())
-                            .split("\n")
-                            .map((line) => {
-                                const vals: Array<string> = line.trim().split("\t");
-                                
-                                return {
-                                    species: vals[0],
-                                    cancer_type: vals[1], 
-                                    correlation: Number(vals[2])
-                                }
-                            });
-            setAllData(results);
-        }
-
-        loadData();
-    }, [data_path]);
-    
+        const results: corr_type[] = resultsTSV
+            .split("\n")
+            .map(line => {
+                const vals = line.trim().split("\t");
+                return { species: vals[0], cancer_type: vals[1], correlation: Number(vals[2]) };
+            });
+        setAllData(results);
+    }, [resultsTSV]);
 
     const data = useMemo(() => {
-      return allData
-        .filter((d) => d.cancer_type === selected_cancer)
-        .sort((a, b) => b.correlation - a.correlation);
-    }, [allData, selected_cancer]);
+        return allData
+            .filter(d => d.cancer_type === selected_cancer)
+            .filter(d => !excludePrimates || !primateSpecies.has(d.species))
+            .sort((a, b) => b.correlation - a.correlation);
+    }, [allData, selected_cancer, excludePrimates, primateSpecies]);
 
     return (
-        <div style={{maxHeight: "500px", overflowY: "auto", padding: "10px"}}>
-          {
-            data?.length === 0 ? (
-              <div style={{padding: "20px", textAlign: "center"}}>
-                Loading results...
-              </div>
-            ) : (
-              data.map((d: corr_type, i: number) => {
-                return (
-                  <div
-                    key={d.species + d.cancer_type}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      padding: "12px",
-                      marginBottom: "10px",
-                      border: "1px solid #d0d7e2",
-                      borderRadius: "10px",
-                      background: "#f7f9fc"
-                    }}
-                  >
+        <div>
+            <label style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", cursor: "pointer", userSelect: "none" }}>
+                <input
+                    type="checkbox"
+                    checked={excludePrimates}
+                    onChange={e => setExcludePrimates(e.target.checked)}
+                    style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                />
+                <span style={{ fontWeight: 600, color: "#172033" }}>Exclude primates</span>
+            </label>
 
-                    {/* Rank */}
-                    <div
-                      style={{
-                        fontWeight: "bold",
-                        fontSize: "1.2rem",
-                        width: "40px",
-                        textAlign: "center"
-                      }}
-                    >
-                      #{i + 1}
+            <div style={{ maxHeight: "400px", overflowY: "auto" }}>
+                {resultsTSV === "" ? (
+                    <div style={{ padding: "20px", textAlign: "center", color: "#4d5b77" }}>
+                        Loading results...
                     </div>
-                  
-                    {/* Correlation score */}
-                    <div
-                      style={{
-                        background: "#e6edff",
-                        padding: "6px 10px",
-                        borderRadius: "6px",
-                        fontWeight: 600,
-                        minWidth: "70px",
-                        textAlign: "center"
-                      }}
-                    >
-                      {d.correlation.toFixed(3)}
+                ) : data.length === 0 ? (
+                    <div style={{ padding: "20px", textAlign: "center", color: "#4d5b77" }}>
+                        No results for the current filters.
                     </div>
-                  
-                    {/* Species info */}
-                    <div style={{flex: 1}}>
-                      <div style={{ fontWeight: 600 }}>
-                        <a
-                          href={"https://en.wikipedia.org/wiki/" + d.species.replace(/\s+/g, "_")}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: "#1f4fd1", textDecoration: "none" }}
-                        >
-                          {d.species}
-                        </a>
-                      </div>
-                    </div>
-
-                  </div>
-                )
-              })
-            )
-          }
+                ) : (
+                    data.map((d, i) => (
+                        <CorrelationListRow key={d.species + d.cancer_type} d={d} i={i} />
+                    ))
+                )}
+            </div>
         </div>
-    )
+    );
 }
